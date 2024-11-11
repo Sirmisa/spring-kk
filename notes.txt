@@ -1,0 +1,54 @@
+curl -X POST   http://localhost:8081/api/users   -H 'Content-Type: application/json'   -d '{
+    "id": 2,
+    "name": "Yeah yeah",
+    "email": "yeah@example.com"
+}'
+
+docker-compose up -d
+docker-compose down
+docker-compose down -v
+
+
+curl -X POST http://localhost:8081/api/orders \
+-H 'Content-Type: application/json' \
+-d '{
+    "orderId": "ORD-001",
+    "orderDate": "2024-03-20T10:30:00",
+    "customer": {
+        "id": 1,
+        "name": "John Doe",
+        "email": "john@example.com"
+    },
+    "shippingAddress": {
+        "street": "123 Main St",
+        "city": "Boston",
+        "state": "MA",
+        "country": "USA",
+        "zipCode": "02108"
+    },
+    "billingAddress": {
+        "street": "123 Main St",
+        "city": "Boston",
+        "state": "MA",
+        "country": "USA",
+        "zipCode": "02108"
+    },
+    "items": [
+        {
+            "productId": 101,
+            "productName": "Widget A",
+            "quantity": 2,
+            "unitPrice": 29.99,
+            "totalPrice": 59.98
+        },
+        {
+            "productId": 102,
+            "productName": "Widget B",
+            "quantity": 1,
+            "unitPrice": 49.99,
+            "totalPrice": 49.99
+        }
+    ],
+    "totalAmount": 109.97,
+    "status": "PENDING"
+}'

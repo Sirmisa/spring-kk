@@ -1,11 +1,12 @@
 package com.example.demo.stream;
 
+import com.example.demo.config.KafkaTopicConfig;
+import com.example.demo.config.serde.JsonSerde;
 import com.example.demo.model.Order;
-import com.example.demo.config.OrderSerde;
-import org.apache.kafka.streams.StreamsBuilder;
-import org.apache.kafka.streams.kstream.KStream;
-import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.common.serialization.Serdes;
+import org.apache.kafka.streams.StreamsBuilder;
+import org.apache.kafka.streams.kstream.Consumed;
+import org.apache.kafka.streams.kstream.KStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,18 +24,17 @@ public class OrderStreamProcessor {
     void buildPipeline(StreamsBuilder streamsBuilder) {
         logger.info("Initializing Kafka Streams pipeline for order processing");
 
-        // Create a stream from the input topic with explicit serde
-        KStream<String, Order> orderStream = streamsBuilder.stream("orders-input", 
-            Consumed.with(Serdes.String(), new OrderSerde()));
+        KStream<String, Order> orderStream = streamsBuilder.stream(
+            KafkaTopicConfig.ORDERS_TOPIC,
+            Consumed.with(Serdes.String(), new JsonSerde<>(Order.class))
+        );
         
-        // Just consume and log the orders
         orderStream.foreach((key, order) -> {
-            logger.info("Consumed order - Key: {}, OrderId: {}", key, order.getOrderId());
+            logger.info("Processing order - Key: {}, OrderId: {}", key, order.getOrderId());
             logger.debug("Order details - Customer: {}, Items: {}, Total: ${}", 
                 order.getCustomer().getName(),
                 order.getItems().size(),
                 order.getTotalAmount());
-            // The order object is now available for any other processing needed
         });
 
         logger.info("Kafka Streams pipeline built successfully");

@@ -7,6 +7,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
+import java.util.Optional;
+
 /**
  * Service responsible for consuming messages from Kafka topics.
  * Handles both User and Order messages with logging.
@@ -37,13 +40,13 @@ public class KafkaConsumerService {
     public void consumeOrder(Order order) {
         log.info("Received order message from Kafka - Order ID: {}", order.getOrderId());
         log.debug("Order details - Customer: {}, Total Amount: {}, Status: {}", 
-            order.getCustomer().getName(),
+            Optional.ofNullable(order.getCustomer()).map(User::getName).orElse("N/A"),
             order.getTotalAmount(),
             order.getStatus()
         );
         
-        // Log detailed information about items
-        if (log.isDebugEnabled()) {
+        // Log detailed information about items if they exist
+        if (log.isDebugEnabled() && order.getItems() != null) {
             order.getItems().forEach(item -> 
                 log.debug("Order item - Product: {}, Quantity: {}, Total: {}", 
                     item.getProductName(),

@@ -5,9 +5,9 @@ import com.example.demo.model.User;
 import com.example.demo.model.Order;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.context.annotation.Import;
@@ -16,6 +16,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.serializer.JsonSerializer;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,6 +27,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.awaitility.Awaitility.await;
 
+@RunWith(SpringRunner.class)
 @SpringBootTest(properties = {
     "spring.kafka.consumer.auto-offset-reset=earliest",
     "spring.kafka.consumer.group-id=test-group",
@@ -36,7 +38,7 @@ import static org.awaitility.Awaitility.await;
                topics = {"users", "orders"})
 @Import(KafkaTestConfig.class)
 @DirtiesContext
-class KafkaConsumerServiceTemplateTest {
+public class KafkaConsumerServiceTemplateTest {
 
     private KafkaTemplate<String, User> userKafkaTemplate;
     private KafkaTemplate<String, Order> orderKafkaTemplate;
@@ -47,8 +49,8 @@ class KafkaConsumerServiceTemplateTest {
     private User testUser;
     private Order testOrder;
 
-    @BeforeEach
-    void setup() {
+    @Before
+    public void setup() {
         // Setup Kafka templates
         Map<String, Object> producerProps = new HashMap<>();
         producerProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
@@ -74,7 +76,7 @@ class KafkaConsumerServiceTemplateTest {
     }
 
     @Test
-    void testConsumeUser() {
+    public void testConsumeUser() {
         userKafkaTemplate.send("users", testUser.getId().toString(), testUser);
 
         await()
@@ -86,7 +88,7 @@ class KafkaConsumerServiceTemplateTest {
     }
 
     @Test
-    void testConsumeOrder() {
+    public void testConsumeOrder() {
         orderKafkaTemplate.send("orders", testOrder.getOrderId(), testOrder);
 
         await()
@@ -98,7 +100,7 @@ class KafkaConsumerServiceTemplateTest {
     }
 
     @Test
-    void testConsumeMultipleUsers() {
+    public void testConsumeMultipleUsers() {
         User secondUser = new User(2L, "Second User", "second@example.com");
 
         userKafkaTemplate.send("users", testUser.getId().toString(), testUser);

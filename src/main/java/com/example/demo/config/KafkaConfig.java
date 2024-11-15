@@ -25,7 +25,8 @@ import java.util.Map;
 @Slf4j
 public class KafkaConfig {
 
-    @Value("${spring.kafka.bootstrap-servers}")
+    //@Value("${spring.kafka.bootstrap-servers}")
+    @Value("localhost:9000")
     private String bootstrapServers;
 
     /**

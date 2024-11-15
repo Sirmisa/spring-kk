@@ -32,7 +32,7 @@ public class KafkaConsumerService {
         );
         
         // Log detailed information about items if they exist
-        if (log.isDebugEnabled() && order.getItems() != null) {
+        if (order.getItems() != null) {
             order.getItems().forEach(item -> 
                 log.debug("Order item - Product: {}, Quantity: {}, Total: {}", 
                     item.getProductName(),

@@ -1,6 +1,6 @@
 package com.example.demo.service;
 
-import com.example.demo.config.KafkaTestConfig;
+import com.example.demo.config.KafkaConfig;
 import com.example.demo.model.Customer;
 import com.example.demo.model.Order;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -16,6 +16,7 @@ import org.springframework.kafka.support.serializer.JsonSerializer;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.test.annotation.DirtiesContext;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -31,9 +32,10 @@ import static org.awaitility.Awaitility.await;
     "spring.main.allow-bean-definition-overriding=true"
 })
 @EmbeddedKafka(partitions = 1,
-               brokerProperties = {"listeners=PLAINTEXT://localhost:9092", "port=9092"},
-               topics = {"users", "orders"})
-@Import(KafkaTestConfig.class)
+               brokerProperties = {"listeners=PLAINTEXT://localhost:9000", "port=9000"},
+               topics = {"users", "orders"},
+               ports = 9000)
+@Import(KafkaConfig.class)
 @DirtiesContext
 class KafkaConsumerServiceTemplateTest {
 
@@ -48,7 +50,7 @@ class KafkaConsumerServiceTemplateTest {
     void setup() {
         // Setup Kafka templates
         Map<String, Object> producerProps = new HashMap<>();
-        producerProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+        producerProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9000");
         producerProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         producerProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
 
@@ -64,6 +66,7 @@ class KafkaConsumerServiceTemplateTest {
         testOrder = new Order();
         testOrder.setOrderId("TEST-001");
         testOrder.setCustomer(testCustomer);
+        testOrder.setTotalAmount(BigDecimal.valueOf(100.00));
         testOrder.setStatus("PENDING");
     }
 

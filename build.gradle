@@ -25,19 +25,19 @@ repositories {
 
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter'
-	implementation 'org.springframework.kafka:spring-kafka'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.kafka:spring-kafka'
+	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
 	compileOnly 'org.projectlombok:lombok'
-	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	annotationProcessor 'org.projectlombok:lombok'
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.kafka:spring-kafka-test'
-	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310' // This is optional just to handle java 8 dates
 	testImplementation 'org.awaitility:awaitility:4.2.0'
 	testImplementation 'org.mockito:mockito-core'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
-tasks.named('test') {
+test {
 	useJUnitPlatform()
 }

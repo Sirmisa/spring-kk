@@ -1,6 +1,6 @@
 package com.example.demo.service;
 
-import com.example.demo.model.User;
+import com.example.demo.model.Customer;
 import com.example.demo.model.Order;
 import com.example.demo.model.OrderItem;
 import lombok.extern.slf4j.Slf4j;
@@ -12,25 +12,11 @@ import java.util.Optional;
 
 /**
  * Service responsible for consuming messages from Kafka topics.
- * Handles both User and Order messages with logging.
+ * Handles both Customer and Order messages with logging.
  */
 @Service
 @Slf4j
 public class KafkaConsumerService {
-
-    @KafkaListener(
-        topics = "users",
-        groupId = "user-group",
-        containerFactory = "userKafkaListenerContainerFactory"
-    )
-    public void consumeUser(User user) {
-        log.info("Received user message from Kafka");
-        log.debug("User details - ID: {}, Name: {}, Email: {}", 
-            user.getId(), 
-            user.getName(), 
-            user.getEmail()
-        );
-    }
 
     @KafkaListener(
         topics = "orders",
@@ -40,7 +26,7 @@ public class KafkaConsumerService {
     public void consumeOrder(Order order) {
         log.info("Received order message from Kafka - Order ID: {}", order.getOrderId());
         log.debug("Order details - Customer: {}, Total Amount: {}, Status: {}", 
-            Optional.ofNullable(order.getCustomer()).map(User::getName).orElse("N/A"),
+            Optional.ofNullable(order.getCustomer()).map(Customer::getName).orElse("N/A"),
             order.getTotalAmount(),
             order.getStatus()
         );

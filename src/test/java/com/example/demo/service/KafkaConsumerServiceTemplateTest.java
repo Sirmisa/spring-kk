@@ -1,13 +1,12 @@
 package com.example.demo.service;
 
 import com.example.demo.config.KafkaTestConfig;
-import com.example.demo.model.User;
+import com.example.demo.model.Customer;
 import com.example.demo.model.Order;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.context.annotation.Import;
@@ -38,13 +37,11 @@ import static org.awaitility.Awaitility.await;
 @DirtiesContext
 class KafkaConsumerServiceTemplateTest {
 
-    private KafkaTemplate<String, User> userKafkaTemplate;
     private KafkaTemplate<String, Order> orderKafkaTemplate;
 
     @SpyBean
     private KafkaConsumerService consumerService;
 
-    private User testUser;
     private Order testOrder;
 
     @BeforeEach
@@ -55,34 +52,19 @@ class KafkaConsumerServiceTemplateTest {
         producerProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         producerProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
 
-        DefaultKafkaProducerFactory<String, User> userProducerFactory = 
-            new DefaultKafkaProducerFactory<>(producerProps);
         DefaultKafkaProducerFactory<String, Order> orderProducerFactory = 
             new DefaultKafkaProducerFactory<>(producerProps);
 
-        userKafkaTemplate = new KafkaTemplate<>(userProducerFactory);
         orderKafkaTemplate = new KafkaTemplate<>(orderProducerFactory);
 
-        // Setup test user
-        testUser = new User(1L, "Test User", "test@example.com");
+        // Setup test customer
+        Customer testCustomer = new Customer(1L, "Test Customer", "test@example.com");
 
         // Setup test order
         testOrder = new Order();
         testOrder.setOrderId("TEST-001");
-        testOrder.setCustomer(testUser);
+        testOrder.setCustomer(testCustomer);
         testOrder.setStatus("PENDING");
-    }
-
-    @Test
-    void testConsumeUser() {
-        userKafkaTemplate.send("users", testUser.getId().toString(), testUser);
-
-        await()
-            .atMost(10, TimeUnit.SECONDS)
-            .pollInterval(500, TimeUnit.MILLISECONDS)
-            .untilAsserted(() -> {
-                verify(consumerService, times(1)).consumeUser(any(User.class));
-            });
     }
 
     @Test
@@ -97,18 +79,4 @@ class KafkaConsumerServiceTemplateTest {
             });
     }
 
-    @Test
-    void testConsumeMultipleUsers() {
-        User secondUser = new User(2L, "Second User", "second@example.com");
-
-        userKafkaTemplate.send("users", testUser.getId().toString(), testUser);
-        userKafkaTemplate.send("users", secondUser.getId().toString(), secondUser);
-
-        await()
-            .atMost(10, TimeUnit.SECONDS)
-            .pollInterval(500, TimeUnit.MILLISECONDS)
-            .untilAsserted(() -> {
-                verify(consumerService, times(2)).consumeUser(any(User.class));
-            });
-    }
 } 

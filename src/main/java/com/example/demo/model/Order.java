@@ -14,7 +14,7 @@ import java.util.List;
 public class Order {
     private String orderId;
     private LocalDateTime orderDate;
-    private User customer;
+    private Customer customer;
     private Address shippingAddress;
     private Address billingAddress;
     private List<OrderItem> items;

@@ -1,44 +1,39 @@
 package com.example.demo.service;
 
 import com.example.demo.config.KafkaConfig;
-import com.example.demo.model.Customer;
-import com.example.demo.model.Order;
-import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.common.serialization.StringSerializer;
+import com.example.demo.config.SerdesConfig;
+import com.example.demo.model.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.context.annotation.Import;
-import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.support.serializer.JsonSerializer;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.test.annotation.DirtiesContext;
 
 import java.math.BigDecimal;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.times;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
-import static org.awaitility.Awaitility.await;
 
 @SpringBootTest(properties = {
     "spring.kafka.consumer.auto-offset-reset=earliest",
-    "spring.kafka.consumer.group-id=test-group",
-    "spring.main.allow-bean-definition-overriding=true"
+    "spring.kafka.consumer.group-id=test-group"
 })
 @EmbeddedKafka(partitions = 1,
-               brokerProperties = {"listeners=PLAINTEXT://localhost:9000", "port=9000"},
-               topics = {"users", "orders"},
-               ports = 9000)
-@Import(KafkaConfig.class)
+    brokerProperties = {"listeners=PLAINTEXT://localhost:9000"},
+    topics = {"orders"})
+@Import({KafkaConfig.class, SerdesConfig.class})
 @DirtiesContext
 class KafkaConsumerServiceTemplateTest {
 
+    @Autowired
     private KafkaTemplate<String, Order> orderKafkaTemplate;
 
     @SpyBean
@@ -48,38 +43,59 @@ class KafkaConsumerServiceTemplateTest {
 
     @BeforeEach
     void setup() {
-        // Setup Kafka templates
-        Map<String, Object> producerProps = new HashMap<>();
-        producerProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9000");
-        producerProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        producerProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
-
-        DefaultKafkaProducerFactory<String, Order> orderProducerFactory = 
-            new DefaultKafkaProducerFactory<>(producerProps);
-
-        orderKafkaTemplate = new KafkaTemplate<>(orderProducerFactory);
-
-        // Setup test customer
+        // Create test customer
         Customer testCustomer = new Customer(1L, "Test Customer", "test@example.com");
 
-        // Setup test order
+        // Create test addresses
+        Address shippingAddress = new Address(
+            "123 Shipping St",
+            "Ship City",
+            "Ship State",
+            "12345",
+            "Ship Country"
+        );
+
+        Address billingAddress = new Address(
+            "456 Billing St",
+            "Bill City",
+            "Bill State",
+            "67890",
+            "Bill Country"
+        );
+
+        // Create test order items
+        List<OrderItem> items = Arrays.asList(
+            new OrderItem(1L, "Product 1", 2, BigDecimal.valueOf(29.99), BigDecimal.valueOf(59.98)),
+            new OrderItem(2L, "Product 2", 1, BigDecimal.valueOf(49.99), BigDecimal.valueOf(49.99))
+        );
+
+        // Create test order
         testOrder = new Order();
         testOrder.setOrderId("TEST-001");
+        testOrder.setOrderDate(LocalDateTime.now());
         testOrder.setCustomer(testCustomer);
-        testOrder.setTotalAmount(BigDecimal.valueOf(100.00));
+        testOrder.setShippingAddress(shippingAddress);
+        testOrder.setBillingAddress(billingAddress);
+        testOrder.setItems(items);
+        testOrder.setTotalAmount(BigDecimal.valueOf(109.97));
         testOrder.setStatus("PENDING");
     }
 
     @Test
-    void testConsumeOrder() {
+    void shouldConsumeOrderMessage() {
+        // When
         orderKafkaTemplate.send("orders", testOrder.getOrderId(), testOrder);
 
-        await()
-            .atMost(10, TimeUnit.SECONDS)
-            .pollInterval(500, TimeUnit.MILLISECONDS)
-            .untilAsserted(() -> {
-                verify(consumerService, times(1)).consumeOrder(any(Order.class));
-            });
+        // Then
+        verify(consumerService, timeout(1000))
+            .consumeOrder(argThat(order -> 
+                order.getOrderId().equals(testOrder.getOrderId()) &&
+                order.getStatus().equals(testOrder.getStatus()) &&
+                order.getTotalAmount().compareTo(testOrder.getTotalAmount()) == 0 &&
+                order.getCustomer().getName().equals(testOrder.getCustomer().getName()) &&
+                order.getItems().size() == testOrder.getItems().size() &&
+                order.getShippingAddress().getStreet().equals(testOrder.getShippingAddress().getStreet()) &&
+                order.getBillingAddress().getStreet().equals(testOrder.getBillingAddress().getStreet())
+            ));
     }
-
 } 

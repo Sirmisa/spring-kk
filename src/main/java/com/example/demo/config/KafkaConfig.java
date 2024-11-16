@@ -1,12 +1,11 @@
 package com.example.demo.config;
 
-import com.example.demo.kafka.GenericJsonDeserializer;
-import com.example.demo.model.Customer;
 import com.example.demo.model.Order;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.common.serialization.StringDeserializer;
+import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.apache.kafka.common.serialization.StringDeserializer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,45 +16,49 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Kafka configuration class that sets up producers and consumers with JSON serialization.
- * Configures both generic producer factory and type-specific consumer factory.
- */
 @Configuration
 @Slf4j
 public class KafkaConfig {
 
-    //@Value("${spring.kafka.bootstrap-servers}")
-    @Value("localhost:9000")
+    @Value("${spring.kafka.bootstrap-servers}")
     private String bootstrapServers;
 
-    /**
-     * Creates a consumer factory specifically for Order messages.
-     * Configures JSON deserialization for Order class.
-     */
     @Bean
-    public ConsumerFactory<String, Order> orderConsumerFactory() {
+    public ProducerFactory<String, Order> orderProducerFactory(Serde<Order> orderSerde) {
         Map<String, Object> config = new HashMap<>();
-        config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        config.put(ConsumerConfig.GROUP_ID_CONFIG, "order-group");
-        config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, GenericJsonDeserializer.class);
-        config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-
-        log.info("Configuring order consumer factory with group: order-group");
-        return new DefaultKafkaConsumerFactory<>(
+        config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        return new DefaultKafkaProducerFactory<>(
             config,
-            new StringDeserializer(),
-            new GenericJsonDeserializer<>(Order.class)
+            new StringSerializer(),
+            orderSerde.serializer()
         );
     }
 
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, Order> orderKafkaListenerContainerFactory() {
+    public KafkaTemplate<String, Order> orderKafkaTemplate(ProducerFactory<String, Order> producerFactory) {
+        return new KafkaTemplate<>(producerFactory);
+    }
+
+    @Bean
+    public ConsumerFactory<String, Order> orderConsumerFactory(Serde<Order> orderSerde) {
+        Map<String, Object> config = new HashMap<>();
+        config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        config.put(ConsumerConfig.GROUP_ID_CONFIG, "order-group");
+        config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+
+        return new DefaultKafkaConsumerFactory<>(
+            config,
+            new StringDeserializer(),
+            orderSerde.deserializer()
+        );
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, Order> orderKafkaListenerContainerFactory(
+            ConsumerFactory<String, Order> consumerFactory) {
         ConcurrentKafkaListenerContainerFactory<String, Order> factory = 
             new ConcurrentKafkaListenerContainerFactory<>();
-        factory.setConsumerFactory(orderConsumerFactory());
-        log.info("Created Kafka listener container factory for Order messages");
+        factory.setConsumerFactory(consumerFactory);
         return factory;
     }
 } 

@@ -1,7 +1,5 @@
 package com.example.demo.config;
 
-import com.example.demo.kafka.GenericJsonDeserializer;
-import com.example.demo.model.Customer;
 import com.example.demo.model.Order;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -12,6 +10,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.*;
+import org.springframework.kafka.support.serializer.JsonDeserializer;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.HashMap;
@@ -25,8 +24,7 @@ import java.util.Map;
 @Slf4j
 public class KafkaConfig {
 
-    //@Value("${spring.kafka.bootstrap-servers}")
-    @Value("localhost:9000")
+    @Value("${spring.kafka.bootstrap-servers}")
     private String bootstrapServers;
 
     /**
@@ -39,14 +37,15 @@ public class KafkaConfig {
         config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         config.put(ConsumerConfig.GROUP_ID_CONFIG, "order-group");
         config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, GenericJsonDeserializer.class);
+        config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
         config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+        config.put(JsonDeserializer.TRUSTED_PACKAGES, "com.example.demo.model");
 
         log.info("Configuring order consumer factory with group: order-group");
         return new DefaultKafkaConsumerFactory<>(
             config,
             new StringDeserializer(),
-            new GenericJsonDeserializer<>(Order.class)
+            new JsonDeserializer<>(Order.class, false)
         );
     }
 

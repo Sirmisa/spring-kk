@@ -29,11 +29,13 @@ import static org.awaitility.Awaitility.await;
 @SpringBootTest(properties = {
     "spring.kafka.consumer.auto-offset-reset=earliest",
     "spring.kafka.consumer.group-id=test-group",
+    "spring.kafka.consumer.value-deserializer=org.springframework.kafka.support.serializer.JsonDeserializer",
+    "spring.kafka.consumer.properties.spring.json.trusted.packages=com.example.demo.model",
     "spring.main.allow-bean-definition-overriding=true"
 })
 @EmbeddedKafka(partitions = 1,
                brokerProperties = {"listeners=PLAINTEXT://localhost:9000", "port=9000"},
-               topics = {"users", "orders"},
+               topics = {"orders"},
                ports = 9000)
 @Import(KafkaConfig.class)
 @DirtiesContext

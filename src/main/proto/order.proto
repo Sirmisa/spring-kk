@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package com.example.demo.proto;
+
+option java_multiple_files = true;
+option java_package = "com.example.demo.proto";
+
+message CustomerProto {
+  int64 id = 1;
+  string name = 2;
+  string email = 3;
+}
+
+message AddressProto {
+  string street = 1;
+  string city = 2;
+  string state = 3;
+  string country = 4;
+  string zip_code = 5;
+}
+
+message OrderItemProto {
+  int64 product_id = 1;
+  string product_name = 2;
+  int32 quantity = 3;
+  double unit_price = 4;
+  double total_price = 5;
+}
+
+message OrderProto {
+  string order_id = 1;
+  string order_date = 2;
+  CustomerProto customer = 3;
+  AddressProto shipping_address = 4;
+  AddressProto billing_address = 5;
+  repeated OrderItemProto items = 6;
+  double total_amount = 7;
+  string status = 8;
+} 
